@@ -5,94 +5,123 @@ import { jsonContentRequired } from "stoker/openapi/helpers";
 import { commonResponses } from "@/lib";
 
 import {
-	AuthResponseSchema,
-	LoginSchema,
-	MeResponseSchema,
-	MessageResponseSchema,
-	RefreshTokenSchema,
+  AuthResponseSchema,
+  LoginSchema,
+  MeResponseSchema,
+  MessageResponseSchema,
+  RefreshTokenSchema,
+  UpdateRequestSchema,
+  UpdateResponseSchema,
 } from "./auth.schemas";
+import { authMiddleware } from "@/lib/auth";
 
 export const login = createRoute({
-	method: "post",
-	path: "/login",
-	tags: ["Auth"],
-	summary: "Login",
-	description: "Telefon raqami va parol bilan tizimga kirish",
-	request: {
-		body: jsonContentRequired(LoginSchema, "Login credentials"),
-	},
-	responses: {
-		[HttpStatusCodes.OK]: {
-			content: {
-				"application/json": {
-					schema: AuthResponseSchema,
-				},
-			},
-			description: "Muvaffaqiyatli kirish",
-		},
-		...commonResponses,
-	},
+  method: "post",
+  path: "/login",
+  tags: ["Auth"],
+  summary: "Login",
+  description: "Telefon raqami va parol bilan tizimga kirish",
+  request: {
+    body: jsonContentRequired(LoginSchema, "Login credentials"),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: {
+      content: {
+        "application/json": {
+          schema: AuthResponseSchema,
+        },
+      },
+      description: "Muvaffaqiyatli kirish",
+    },
+    ...commonResponses,
+  },
 });
 
 export const refresh = createRoute({
-	method: "post",
-	path: "/refresh",
-	tags: ["Auth"],
-	summary: "Refresh tokens",
-	description: "Refresh token yordamida yangi access va refresh tokenlarni olish",
-	request: {
-		body: jsonContentRequired(RefreshTokenSchema, "Refresh token"),
-	},
-	responses: {
-		[HttpStatusCodes.OK]: {
-			content: {
-				"application/json": {
-					schema: AuthResponseSchema,
-				},
-			},
-			description: "Yangi tokenlar",
-		},
-		...commonResponses,
-	},
+  method: "post",
+  path: "/refresh",
+  tags: ["Auth"],
+  summary: "Refresh tokens",
+  description:
+    "Refresh token yordamida yangi access va refresh tokenlarni olish",
+  request: {
+    body: jsonContentRequired(RefreshTokenSchema, "Refresh token"),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: {
+      content: {
+        "application/json": {
+          schema: AuthResponseSchema,
+        },
+      },
+      description: "Yangi tokenlar",
+    },
+    ...commonResponses,
+  },
 });
 
 export const logout = createRoute({
-	method: "post",
-	path: "/logout",
-	tags: ["Auth"],
-	summary: "Logout",
-	description: "Tizimdan chiqish va refresh tokenni bekor qilish",
-	request: {
-		body: jsonContentRequired(RefreshTokenSchema, "Refresh token"),
-	},
-	responses: {
-		[HttpStatusCodes.OK]: {
-			content: {
-				"application/json": {
-					schema: MessageResponseSchema,
-				},
-			},
-			description: "Muvaffaqiyatli chiqish",
-		},
-		...commonResponses,
-	},
+  method: "post",
+  path: "/logout",
+  tags: ["Auth"],
+  summary: "Logout",
+  description: "Tizimdan chiqish va refresh tokenni bekor qilish",
+  middleware: [authMiddleware],
+  request: {
+    body: jsonContentRequired(RefreshTokenSchema, "Refresh token"),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: {
+      content: {
+        "application/json": {
+          schema: MessageResponseSchema,
+        },
+      },
+      description: "Muvaffaqiyatli chiqish",
+    },
+    ...commonResponses,
+  },
 });
 
 export const me = createRoute({
-	method: "get",
-	path: "/me",
-	tags: ["Auth"],
-	summary: "Get current user",
-	description: "Joriy foydalanuvchi ma'lumotlarini olish",
-	responses: {
-		[HttpStatusCodes.OK]: {
-			content: {
-				"application/json": {
-					schema: MeResponseSchema,
-				},
-			},
-			description: "Joriy foydalanuvchi",
-		},
-		...commonResponses,
-	},
+  method: "get",
+  path: "/me",
+  tags: ["Auth"],
+  summary: "Get current user",
+  description: "Joriy foydalanuvchi ma'lumotlarini olish",
+  middleware: [authMiddleware],
+  responses: {
+    [HttpStatusCodes.OK]: {
+      content: {
+        "application/json": {
+          schema: MeResponseSchema,
+        },
+      },
+      description: "Joriy foydalanuvchi",
+    },
+    ...commonResponses,
+  },
+});
+
+export const update = createRoute({
+  method: "put",
+  path: "/me",
+  tags: ["Auth"],
+  summary: "Update current user",
+  description: "Joriy foydalanuvchi ma'lumotlarini o'zgartirish",
+  middleware: [authMiddleware],
+  request: {
+    body: jsonContentRequired(UpdateRequestSchema, "Refresh token"),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: {
+      content: {
+        "application/json": {
+          schema: UpdateResponseSchema,
+        },
+      },
+      description: "Joriy foydalanuvchi",
+    },
+    ...commonResponses,
+  },
 });

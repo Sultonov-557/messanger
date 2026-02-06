@@ -6,9 +6,10 @@ import {
   generateAccessToken,
   generateRefreshToken,
   getRefreshTokenExpirySeconds,
+  hashPassword,
   verifyPassword,
 } from "@/lib/auth";
-import { invalidCredentials, notFound } from "@/lib/errors";
+import { conflict, invalidCredentials, notFound } from "@/lib/errors";
 import {
   deleteRefreshToken,
   isRefreshTokenValid,
@@ -16,7 +17,8 @@ import {
 } from "@/lib/redis";
 import type { AppRouteHandler } from "@/lib/types";
 
-import type { login, logout, me, refresh } from "./auth.routes";
+import type { login, logout, me, refresh, update } from "./auth.routes";
+import { UpdateRequestSchema } from "./auth.schemas";
 
 export const loginHandler: AppRouteHandler<typeof login> = async (c) => {
   const { username, password } = c.req.valid("json");
@@ -34,7 +36,6 @@ export const loginHandler: AppRouteHandler<typeof login> = async (c) => {
   }
 
   const isValidPassword = await verifyPassword(password, user.password);
-  console.log(isValidPassword);
 
   if (!isValidPassword) {
     throw invalidCredentials("Username yoki parol noto'g'ri");
@@ -143,6 +144,60 @@ export const meHandler: AppRouteHandler<typeof me> = async (c) => {
   if (!user) {
     throw notFound("Foydalanuvchi", authUser.id);
   }
+
+  return c.json(
+    {
+      success: true as const,
+      data: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        isActive: user.isActive,
+        createdAt: user.createdAt.toISOString(),
+      },
+    },
+    200,
+  );
+};
+
+export const updateHandler: AppRouteHandler<typeof update> = async (c) => {
+  const authUser = c.get("user");
+  const body = UpdateRequestSchema.parse(await c.req.json());
+
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, authUser.id),
+  });
+
+  if (!user) {
+    throw notFound("Foydalanuvchi", authUser.id);
+  }
+
+  const data: { username?: string; password?: string } = {};
+
+  if (body.username !== undefined) {
+    const foundUser = await db.query.users.findFirst({
+      where: eq(users.username, body.username),
+    });
+
+    if (foundUser) {
+      throw conflict("username band");
+    }
+
+    data.username = body.username;
+  }
+
+  if (body.password && body.currentPassword) {
+    const isValid = verifyPassword(body.currentPassword, user.password);
+
+    if (!isValid) {
+      throw invalidCredentials("parol noto'g'ri");
+    }
+
+    const passwordHash = await hashPassword(body.password);
+    data.password = passwordHash;
+  }
+
+  await db.update(users).set(data).where(eq(users.id, user.id));
 
   return c.json(
     {
