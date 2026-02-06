@@ -1,5 +1,16 @@
 import { z } from "@hono/zod-openapi";
 
+export const RegisterSchema = z.object({
+  username: z.string().min(4).max(20).openapi({
+    example: "user123",
+    description: "Username",
+  }),
+  password: z.string().min(4).max(100).openapi({
+    example: "password123",
+    description: "Parol",
+  }),
+});
+
 export const LoginSchema = z.object({
   username: z.string().min(4).max(20).openapi({
     example: "user123",

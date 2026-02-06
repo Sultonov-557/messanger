@@ -1,16 +1,18 @@
 import { createRouter } from "@/lib";
 
 import {
+  registerHandler,
   loginHandler,
   logoutHandler,
   meHandler,
   refreshHandler,
   updateHandler,
 } from "./auth.handlers";
-import { login, logout, me, refresh, update } from "./auth.routes";
+import { register,login, logout, me, refresh, update } from "./auth.routes";
 
 const router = createRouter();
 
+router.openapi(register, registerHandler);
 router.openapi(login, loginHandler);
 router.openapi(refresh, refreshHandler);
 router.openapi(logout, logoutHandler);

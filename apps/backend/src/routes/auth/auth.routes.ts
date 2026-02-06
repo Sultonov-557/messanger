@@ -10,17 +10,40 @@ import {
   MeResponseSchema,
   MessageResponseSchema,
   RefreshTokenSchema,
+  RegisterSchema,
   UpdateRequestSchema,
   UpdateResponseSchema,
 } from "./auth.schemas";
 import { authMiddleware } from "@/lib/auth";
+
+export const register = createRoute({
+  method: "post",
+  path: "/register",
+  tags: ["Auth"],
+  summary: "Register",
+  description: "Username va parol bilan tizimga kirish",
+  request: {
+    body: jsonContentRequired(RegisterSchema, "Register credentials"),
+  },
+  responses: {
+    [HttpStatusCodes.OK]: {
+      content: {
+        "application/json": {
+          schema: AuthResponseSchema,
+        },
+      },
+      description: "Muvaffaqiyatli kirish",
+    },
+    ...commonResponses,
+  },
+});
 
 export const login = createRoute({
   method: "post",
   path: "/login",
   tags: ["Auth"],
   summary: "Login",
-  description: "Telefon raqami va parol bilan tizimga kirish",
+  description: "Username va parol bilan tizimga kirish",
   request: {
     body: jsonContentRequired(LoginSchema, "Login credentials"),
   },

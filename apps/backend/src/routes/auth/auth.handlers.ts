@@ -16,9 +16,49 @@ import {
   storeRefreshToken,
 } from "@/lib/redis";
 import type { AppRouteHandler } from "@/lib/types";
-
 import type { login, logout, me, refresh, update } from "./auth.routes";
 import { UpdateRequestSchema } from "./auth.schemas";
+
+export const registerHandler: AppRouteHandler<typeof login> = async (c) => {
+  const { username, password } = c.req.valid("json");
+
+  const foundUser = await db.query.users.findFirst({
+    where: eq(users.username, username),
+  });
+
+  if (foundUser) {
+    throw conflict("Username band");
+  }
+
+  const passwordHash = await hashPassword(password);
+
+
+  const [user] = await db.insert(users).values({ username, password:passwordHash}).returning()
+
+  const accessToken = await generateAccessToken(user.id, user.role);
+  const refreshToken = generateRefreshToken();
+
+  const expiresIn = getRefreshTokenExpirySeconds();
+  await storeRefreshToken(user.id, refreshToken, expiresIn);
+
+  return c.json(
+    {
+      success: true as const,
+      data: {
+        user: {
+          id: user.id,
+          username: user.username,
+          role: user.role,
+          isActive: user.isActive,
+          createdAt: user.createdAt.toISOString(),
+        },
+        accessToken,
+        refreshToken,
+      },
+    },
+    200,
+  );
+};
 
 export const loginHandler: AppRouteHandler<typeof login> = async (c) => {
   const { username, password } = c.req.valid("json");
